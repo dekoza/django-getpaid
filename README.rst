@@ -36,7 +36,7 @@ Prepare your order model
 First of all you need a model that will represent an order in you application. It does not matter how
 complicated the model is or what fields does it provide, be it single item order, or multiple items order.
 Let's take an example from test project::
-  .. code-block:: python
+.. code-block:: python
     :linenos:
 
     from django.core.urlresolvers import reverse
