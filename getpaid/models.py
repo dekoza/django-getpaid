@@ -1,20 +1,23 @@
+from __future__ import unicode_literals
+from django.utils.encoding import python_2_unicode_compatible
+
 from django.db import models
 from django.utils.timezone import utc
 from django.utils.translation import ugettext_lazy as _
 from datetime import datetime
 import sys
-from abstract_mixin import AbstractMixin
+from .abstract_mixin import AbstractMixin
 import signals
-from utils import import_backend_modules
+from .utils import import_backend_modules
 from django.conf import settings
 
 PAYMENT_STATUS_CHOICES = (
-        ('new', _("new")),
-        ('in_progress', _("in progress")),
-        ('partially_paid', _("partially paid")),
-        ('paid', _("paid")),
-        ('failed', _("failed")),
-        )
+    ('new', _("new")),
+    ('in_progress', _("in progress")),
+    ('partially_paid', _("partially paid")),
+    ('paid', _("paid")),
+    ('failed', _("failed")),
+)
 
 
 class PaymentManager(models.Manager):
@@ -22,6 +25,7 @@ class PaymentManager(models.Manager):
         return super(PaymentManager, self).get_query_set().select_related('order')
 
 
+@python_2_unicode_compatible
 class PaymentFactory(models.Model, AbstractMixin):
     """
     This is an abstract class that defines a structure of Payment model that will be
@@ -40,7 +44,7 @@ class PaymentFactory(models.Model, AbstractMixin):
     class Meta:
         abstract = True
 
-    def __unicode__(self):
+    def __str__(self):
         return _("Payment #%(id)d") % {'id': self.id}
 
     @classmethod
@@ -116,7 +120,7 @@ class PaymentFactory(models.Model, AbstractMixin):
 
 
 from django.db.models.loading import cache as app_cache, register_models
-#from utils import import_backend_modules
+# from utils import import_backend_modules
 
 
 def register_to_payment(order_class, **kwargs):
@@ -130,7 +134,7 @@ def register_to_payment(order_class, **kwargs):
     global Payment
     global Order
 
-    class Payment(PaymentFactory.construct(order=order_class, **kwargs)):
+    class PaymentCls(PaymentFactory.construct(order=order_class, **kwargs)):
         objects = PaymentManager()
 
         class Meta:
@@ -139,6 +143,7 @@ def register_to_payment(order_class, **kwargs):
             verbose_name_plural = _("Payments")
 
     Order = order_class
+    Payment = PaymentCls
 
     # Now build models for backends
 
