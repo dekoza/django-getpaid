@@ -1,5 +1,9 @@
+from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.template.base import Template
+from django.template.context import Context
 from getpaid.utils import get_backend_settings
+
 
 class PaymentProcessorBase(object):
     """
@@ -25,20 +29,53 @@ class PaymentProcessorBase(object):
     This constant should be any type of iterable that defines accepted currencies by the backend. Currencies should be
     set as three letters ISO code strings (eg. 'USD', 'EUR')
     """
+    BACKEND_LOGO_URL = None
+    """
+    A path in static root where payment logo could be find.
+    """
 
     def __init__(self, payment):
 
         if payment.currency not in self.BACKEND_ACCEPTED_CURRENCY:
-            raise ValueError("Backend '%s' cannot process '%s' payments." % self.BACKEND, payment.currency)
+            raise ValueError("Backend '%s' cannot process '%s' payments." % (self.BACKEND, payment.currency))
         self.payment = payment
 
+    @classmethod
+    def get_logo_url(cls):
+        """
+        Get backend logo. Use always this method, instead of reading BACKEND_LOGO_URL attribute directly.
+
+        :return: str
+        """
+        return cls.BACKEND_LOGO_URL
+
+    def get_order_description(self, payment, order):
+        """
+        Renders order description using django template provided in ``settings.GETPAID_ORDER_DESCRIPTION``
+        or if not provided return unicode representation of ``Order object``.
+        """
+        template = getattr(settings, 'GETPAID_ORDER_DESCRIPTION', None)
+        if template:
+            return Template(template).render(Context({"payment": payment, "order": order}))
+        else:
+            return unicode(order)
 
     def get_gateway_url(self, request):
         """
-        Should return an URL that redirects to payment Gateway. Request context need to be given
-        because various payment engines requires information about client (e.g. a client IP).
+        Should return a tuple with the first item being the URL that redirects to payment Gateway
+        Second item should be if the request is made via GET or POST. Third item are the parameters
+        to be passed in case of a POST REQUEST. Request context need to be given because various
+        payment engines requires information about client (e.g. a client IP).
         """
         raise NotImplementedError('Must be implemented in PaymentProcessor')
+
+    def get_form(self, post_data):
+        """
+        Only used if the payment processor requires POST requests.
+        Generates a form only containg hidden input fields.
+        """
+        from getpaid.forms import PaymentHiddenInputsPostForm
+        return PaymentHiddenInputsPostForm(items=post_data)
 
     @classmethod
     def get_backend_setting(cls, name, default=None):

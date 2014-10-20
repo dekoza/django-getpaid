@@ -8,6 +8,7 @@ from getpaid.models import Payment
 
 logger = logging.getLogger('getpaid.backends.payu')
 
+
 class OnlineView(View):
     """
     This View answers on PayU online request that is acknowledge of payment
@@ -28,6 +29,7 @@ class OnlineView(View):
         status = PaymentProcessor.online(pos_id, session_id, ts, sig)
         return HttpResponse(status)
 
+
 class SuccessView(DetailView):
     """
     This view just redirects to standard backend success link.
@@ -37,6 +39,7 @@ class SuccessView(DetailView):
     def render_to_response(self, context, **response_kwargs):
         return HttpResponseRedirect(reverse('getpaid-success-fallback', kwargs={'pk': self.object.pk}))
 
+
 class FailureView(DetailView):
     """
     This view just redirects to standard backend failure link.
@@ -44,4 +47,5 @@ class FailureView(DetailView):
     model = Payment
 
     def render_to_response(self, context, **response_kwargs):
+        logger.error("Payment %s failed on backend error %s" % (self.kwargs['pk'], self.kwargs['error']))
         return HttpResponseRedirect(reverse('getpaid-failure-fallback', kwargs={'pk': self.object.pk}))

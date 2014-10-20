@@ -1,2 +1,6 @@
+include CHANGES
+include README.rst
 include *.txt
-recursive-include getpaid/backends/dummy/templates *
+recursive-include getpaid/backends *.png *.html
+graft getpaid/locale
+graft getpaid/templates

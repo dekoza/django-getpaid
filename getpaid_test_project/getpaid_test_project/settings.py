@@ -1,8 +1,9 @@
 # Django settings for getpaid_test_project project.
 
 
-GETPAID_BACKENDS = ('getpaid.backends.dummy',
-                    )
+GETPAID_BACKENDS = (
+    'getpaid.backends.dummy',
+)
 
 GETPAID_BACKENDS_SETTINGS = {
     # Please provide your settings for backends
@@ -143,12 +144,12 @@ INSTALLED_APPS = (
     'djcelery.transport',
 
     'getpaid',
-    'getpaid.backends.dummy',
+
 
 
 
     'getpaid_test_project.orders',
-)
+) + GETPAID_BACKENDS
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
@@ -182,9 +183,17 @@ LOGGING = {
             'propagate': True,
         },
 
+        'getpaid_test_project':{
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
 
         #You can do some fancy logging ;)
         'getpaid.backends.payu':{
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+        'getpaid.backends.przelewy24':{
             'handlers': ['console'],
             'level': 'DEBUG',
         },

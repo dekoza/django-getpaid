@@ -1,6 +1,26 @@
 from django.conf import settings
 import sys
 
+
+def import_name(name):
+    components = name.split('.')
+
+    if len(components) == 1:
+        # direct module, import the module directly
+        mod = __import__(name, globals(), locals(), [name])
+    else:
+        # the module is within another, so we
+        # need to import it from there
+        parent_path = components[0:-1]
+        module_name = components[-1]
+
+        parent_mod = __import__(
+            '.'.join(parent_path), globals(), locals(), [module_name])
+        mod = getattr(parent_mod, components[-1])
+
+    return mod
+
+
 def import_backend_modules(submodule=None):
     backends = getattr(settings, 'GETPAID_BACKENDS', [])
     modules = {}
@@ -19,14 +39,17 @@ def get_backend_choices(currency=None):
     Get active backends modules. Backend list can be filtered by supporting given currency.
     """
     choices = []
-    backends = import_backend_modules()
-    if currency:
-        for backend in backends.keys():
-            if currency not in backends[backend].PaymentProcessor.BACKEND_ACCEPTED_CURRENCY:
-                del backends[backend]
-    for name, module in backends.items():
-        choices.append((name, module.PaymentProcessor.BACKEND_NAME))
+    backends_names = getattr(settings, 'GETPAID_BACKENDS', [])
+
+    for backend_name in backends_names:
+        backend = import_name(backend_name)
+        if currency:
+            if currency in backend.PaymentProcessor.BACKEND_ACCEPTED_CURRENCY:
+                choices.append((backend_name, backend.PaymentProcessor.BACKEND_NAME, ))
+        else:
+            choices.append((backend_name, backend.PaymentProcessor.BACKEND_NAME, ))
     return choices
+
 
 def get_backend_settings(backend):
     """
